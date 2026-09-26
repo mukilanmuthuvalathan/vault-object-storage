@@ -10,9 +10,10 @@ import { hasValidApiKey } from './gateway/auth.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, '..');
 const publicDir = path.join(projectRoot, 'public');
-const dataDir = process.env.VAULT_DATA_DIR || path.join(projectRoot, 'data');
+const isServerless = Boolean(process.env.VERCEL);
+const dataDir = process.env.VAULT_DATA_DIR || (isServerless ? '/tmp/vault-data' : path.join(projectRoot, 'data'));
 const port = Number(process.env.PORT || 8080);
-const storageMode = process.env.VAULT_STORAGE_MODE || 'http';
+const storageMode = process.env.VAULT_STORAGE_MODE || (isServerless ? 'local' : 'http');
 const vault = await new VaultCluster({
   rootDir: dataDir,
   storageMode,
@@ -21,7 +22,7 @@ const vault = await new VaultCluster({
 }).init();
 const mirror = new GcsMirror();
 const rateLimiter = new SlidingWindowRateLimiter({ limit: Number(process.env.RATE_LIMIT_PER_MINUTE || 180) });
-vault.startBackgroundRepair(Number(process.env.REPAIR_INTERVAL_MS || 15000));
+if (!isServerless) vault.startBackgroundRepair(Number(process.env.REPAIR_INTERVAL_MS || 15000));
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -225,10 +226,14 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(port, '0.0.0.0', () => console.log(`Vault listening on http://localhost:${port}`));
+if (!isServerless) server.listen(port, '0.0.0.0', () => console.log(`Vault listening on http://localhost:${port}`));
 
 function shutdown() {
   vault.close().finally(() => server.close(() => process.exit(0)));
 }
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+if (!isServerless) {
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+}
+
+export default server;
