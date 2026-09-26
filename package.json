@@ -1,0 +1,18 @@
+{
+  "name": "vault-distributed-object-store",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fault-tolerant distributed object storage with quorum consistency and automatic repair",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "start:local": "set VAULT_STORAGE_MODE=local&& node src/server.js",
+    "storage-node": "node src/storage/storage-node-server.js",
+    "verify": "npm run check && npm test",
+    "test": "node --test",
+    "test:coverage": "node --test --experimental-test-coverage",
+    "audit": "npm audit --omit=dev",
+    "check": "node scripts/check-syntax.js"
+  },
+  "engines": { "node": ">=20" }
+}

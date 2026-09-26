@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Vault fault-tolerant distributed object storage control plane">
+  <title>Vault — Distributed Object Storage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="#overview" aria-label="Vault home">
+        <span class="brand-mark" aria-hidden="true"><span></span></span>
+        <span>vault</span>
+      </a>
+      <nav>
+        <a class="nav-link active" href="#overview"><span class="nav-icon">⌂</span>Overview</a>
+        <a class="nav-link" href="#objects"><span class="nav-icon">◇</span>Objects</a>
+        <a class="nav-link" href="#nodes"><span class="nav-icon">⌘</span>Nodes</a>
+        <a class="nav-link" href="#activity"><span class="nav-icon">↗</span>Activity</a>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="cloud-card">
+        <span class="eyebrow">Google Cloud</span>
+        <div class="cloud-row"><span class="g-cloud">G</span><div><strong>Cloud Run ready</strong><small id="gcs-status">GCS mirror checking</small></div></div>
+      </div>
+      <div class="user-row">
+        <span class="avatar">OP</span><div><strong>Operator</strong><small>Cluster admin</small></div><span class="more">•••</span>
+      </div>
+    </aside>
+
+    <main id="main">
+      <header class="topbar">
+        <div>
+          <p class="breadcrumb">CONTROL PLANE <span>/</span> PRIMARY CLUSTER</p>
+          <h1>Good morning, Operator.</h1>
+          <p class="subtitle">Your storage fabric is healthy and protecting every object.</p>
+        </div>
+        <div class="header-actions">
+          <span class="live-pill"><i></i><span id="cluster-health">Operational</span></span>
+          <button class="btn ghost" id="seed-button">Load demo data</button>
+          <button class="btn primary" id="upload-button"><span>＋</span> Store object</button>
+        </div>
+      </header>
+
+      <section id="overview" class="metric-grid" aria-label="Cluster overview">
+        <article class="metric-card accent-card">
+          <div class="metric-head"><span>Protected objects</span><span class="metric-icon">◇</span></div>
+          <div class="metric-main"><strong id="object-count">0</strong><span class="delta">100% verified</span></div>
+          <div class="spark-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-head"><span>Logical storage</span><span class="metric-icon purple">◫</span></div>
+          <div class="metric-main"><strong id="logical-bytes">0 B</strong><span class="delta neutral" id="storage-overhead">0× physical</span></div>
+          <div class="capacity-track"><span id="capacity-fill"></span></div>
+          <small>Across 3 availability zones</small>
+        </article>
+        <article class="metric-card">
+          <div class="metric-head"><span>Availability</span><span class="metric-icon green">✓</span></div>
+          <div class="metric-main"><strong id="availability">100%</strong><span class="delta">SLO met</span></div>
+          <div class="availability-dots" id="availability-dots" aria-label="Recent availability samples"></div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-head"><span>Recovery time</span><span class="metric-icon orange">↻</span></div>
+          <div class="metric-main"><strong id="recovery-time">0 ms</strong><span class="delta neutral">Last scrub</span></div>
+          <div class="mini-stat-row"><span><b id="repair-count">0</b> repaired</span><span><b id="failure-count">0</b> faults</span></div>
+        </article>
+      </section>
+
+      <section class="content-grid">
+        <div class="wide-column">
+          <article id="nodes" class="panel">
+            <div class="panel-heading">
+              <div><p class="eyebrow">STORAGE FABRIC</p><h2>Node topology</h2></div>
+              <div class="legend"><span><i class="healthy-dot"></i>Healthy</span><span><i class="warn-dot"></i>Degraded</span><span><i class="down-dot"></i>Offline</span></div>
+            </div>
+            <div class="zone-labels"><span>ZONE 1</span><span>ZONE 2</span><span>ZONE 3</span></div>
+            <div class="node-grid" id="node-grid" aria-live="polite"></div>
+          </article>
+
+          <article id="objects" class="panel object-panel">
+            <div class="panel-heading">
+              <div><p class="eyebrow">OBJECT CATALOG</p><h2>Recently protected</h2></div>
+              <div class="table-actions"><label class="search"><span>⌕</span><input id="object-search" type="search" placeholder="Search objects" aria-label="Search objects"></label><button class="icon-button" id="refresh-button" aria-label="Refresh">↻</button></div>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <caption class="sr-only">Stored objects, health, size, version, replica count, update time, and retrieval action</caption>
+                <thead><tr><th>Object</th><th>Health</th><th>Size</th><th>Version</th><th>Replicas</th><th>Updated</th><th><span class="sr-only">Actions</span></th></tr></thead>
+                <tbody id="object-table"></tbody>
+              </table>
+            </div>
+            <div class="empty-state" id="empty-state">
+              <span class="empty-icon">◇</span><h3>No objects yet</h3><p>Store an object or load demo data to watch Vault replicate it.</p>
+            </div>
+          </article>
+        </div>
+
+        <aside class="right-column">
+          <article class="panel fault-lab">
+            <div class="panel-heading compact"><div><p class="eyebrow">LIVE DEMO</p><h2>Failure lab</h2></div><span class="lab-badge">SAFE</span></div>
+            <p class="panel-copy">Inject a fault and watch quorum reads continue while Vault repairs the cluster.</p>
+            <div class="scenario-list">
+              <button class="scenario" id="fail-node-button"><span class="scenario-icon red">⌁</span><span><strong>Fail a storage node</strong><small>Take one replica host offline</small></span><b>→</b></button>
+              <button class="scenario" id="partition-button"><span class="scenario-icon amber">⌘</span><span><strong>Partition a node</strong><small>Simulate network isolation</small></span><b>→</b></button>
+              <button class="scenario" id="corrupt-button"><span class="scenario-icon purple">⌁</span><span><strong>Corrupt a replica</strong><small>Trigger checksum recovery</small></span><b>→</b></button>
+            </div>
+            <div class="lab-actions"><button class="btn soft" id="scan-button">Run integrity scan</button><button class="btn soft" id="heal-button">Heal all nodes</button></div>
+          </article>
+
+          <article class="panel policy-card">
+            <div class="panel-heading compact"><div><p class="eyebrow">DURABILITY</p><h2>Active policy</h2></div><span class="policy-badge">STRONG</span></div>
+            <div class="policy-visual"><div class="ring"><strong id="policy-rf">3</strong><span>copies</span></div><div class="policy-lines"><span><b id="policy-rq">2</b> Read quorum</span><span><b id="policy-wq">2</b> Write quorum</span><span><b>3</b> Failure domains</span><span id="storage-runtime"><b>15</b> HTTP node processes</span></div></div>
+            <div class="consistency-note"><span>✓</span><p><strong>Strong consistency guaranteed</strong><small>Read + write quorum exceeds replica count.</small></p></div>
+          </article>
+
+          <article id="activity" class="panel activity-card">
+            <div class="panel-heading compact"><div><p class="eyebrow">AUDIT STREAM</p><h2>Live activity</h2></div><span class="pulse"></span></div>
+            <div class="timeline" id="event-list"></div>
+          </article>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="upload-dialog" aria-labelledby="upload-title">
+    <form method="dialog" id="upload-form">
+      <div class="dialog-head"><div><p class="eyebrow">NEW OBJECT</p><h2 id="upload-title">Store and protect</h2></div><button class="close-button" value="cancel" aria-label="Close">×</button></div>
+      <label>Object key<input name="key" id="object-key" required maxlength="240" placeholder="datasets/telemetry.json"></label>
+      <label class="drop-zone" id="drop-zone"><input name="file" id="file-input" type="file" required><span class="upload-glyph">⇧</span><strong>Choose a file</strong><small id="file-label">or drop it here · up to 30 MB</small></label>
+      <label class="storage-class-label">Storage class<select name="storageClass"><option value="hot">Hot · 3 replicas across 3 zones</option><option value="cold">Cold · 10+4 erasure coding</option></select></label>
+      <fieldset><legend>Durability policy</legend><div class="policy-inputs"><label>Replicas<select name="replicationFactor"><option>3</option><option>4</option><option>5</option></select></label><label>Read quorum<select name="readQuorum"><option>2</option><option>3</option></select></label><label>Write quorum<select name="writeQuorum"><option>2</option><option>3</option></select></label></div></fieldset>
+      <div class="dialog-actions"><button class="btn ghost" value="cancel">Cancel</button><button class="btn primary" id="store-submit" value="default">Store object</button></div>
+    </form>
+  </dialog>
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

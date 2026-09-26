@@ -1,0 +1,27 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: [build, -t, '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/vault:$COMMIT_SHA', .]
+  - name: gcr.io/cloud-builders/docker
+    args: [push, '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/vault:$COMMIT_SHA']
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - vault
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/vault:$COMMIT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --set-env-vars=NODE_ENV=production,GCS_MIRROR_BUCKET=${_BUCKET}
+      - --startup-probe=httpGet.path=/api/health,initialDelaySeconds=10,periodSeconds=10,timeoutSeconds=5,failureThreshold=6
+      - --memory=1Gi
+      - --cpu=1
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/vault:$COMMIT_SHA'
+substitutions:
+  _REGION: asia-south1
+  _REPOSITORY: vault
+  _BUCKET: vault-disaster-recovery
+options:
+  logging: CLOUD_LOGGING_ONLY

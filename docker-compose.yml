@@ -1,0 +1,23 @@
+services:
+  vault:
+    build: .
+    container_name: vault-gateway
+    environment:
+      PORT: 8080
+      VAULT_STORAGE_MODE: http
+      VAULT_STORAGE_BASE_PORT: 9100
+      VAULT_DATA_DIR: /app/data
+      REPAIR_INTERVAL_MS: 15000
+    ports:
+      - "8080:8080"
+      - "9101-9115:9101-9115"
+    volumes:
+      - vault-data:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  vault-data:
